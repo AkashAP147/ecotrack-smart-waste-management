@@ -30,8 +30,10 @@ export default defineConfig({
     },
   },
   build: {
+    target: 'esnext',
     outDir: 'dist',
     sourcemap: true,
+    polyfillModulePreload: false,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -52,9 +54,11 @@ export default defineConfig({
   },
   define: {
     global: 'globalThis',
+    // Disable fetch polyfill
+    'process.env': {},
   },
   esbuild: {
-    // Ensure compatibility with older browsers
-    target: 'es2020'
+    target: 'esnext',
+    format: 'esm',
   },
 })

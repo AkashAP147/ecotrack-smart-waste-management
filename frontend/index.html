@@ -37,9 +37,12 @@
   <body>
     <div id="root"></div>
     <script>
-      // Polyfill for fetch if needed
-      if (!window.fetch) {
-        console.log('Fetch not available, loading polyfill...');
+      // Ensure we're in a modern browser environment
+      window.global = window.globalThis = window;
+      
+      // Disable any automatic polyfills
+      if (window.__vite_plugin_react_preamble_installed__) {
+        delete window.__vite_plugin_react_preamble_installed__;
       }
     </script>
     <script type="module" src="/src/main.tsx"></script>
