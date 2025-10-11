@@ -5,7 +5,6 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: './',
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -30,35 +29,23 @@ export default defineConfig({
     },
   },
   build: {
-    target: 'esnext',
     outDir: 'dist',
-    sourcemap: true,
-    polyfillModulePreload: false,
+    sourcemap: false,
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
           router: ['react-router-dom'],
-          maps: ['leaflet', 'react-leaflet'],
           utils: ['axios', 'date-fns', 'clsx'],
         },
       },
     },
-    commonjsOptions: {
-      transformMixedEsModules: true,
-    },
   },
   optimizeDeps: {
-    include: ['leaflet'],
-    exclude: ['@vite/client', '@vite/env'],
+    include: ['react', 'react-dom', 'react-router-dom'],
   },
   define: {
     global: 'globalThis',
-    // Disable fetch polyfill
-    'process.env': {},
-  },
-  esbuild: {
-    target: 'esnext',
-    format: 'esm',
   },
 })

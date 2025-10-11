@@ -37,13 +37,8 @@
   <body>
     <div id="root"></div>
     <script>
-      // Ensure we're in a modern browser environment
-      window.global = window.globalThis = window;
-      
-      // Disable any automatic polyfills
-      if (window.__vite_plugin_react_preamble_installed__) {
-        delete window.__vite_plugin_react_preamble_installed__;
-      }
+      // Ensure global is available
+      window.global = window;
     </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
