@@ -1,0 +1,43 @@
+name: Deploy to Render
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: |
+          frontend/package-lock.json
+          backend/package-lock.json
+    
+    - name: Install Backend Dependencies
+      run: |
+        cd backend
+        npm ci --only=production
+    
+    - name: Install Frontend Dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Build Frontend (Skip Tests)
+      run: |
+        cd frontend
+        npm run build
+      env:
+        CI: false
+        SKIP_PREFLIGHT_CHECK: true
+        GENERATE_SOURCEMAP: false
+    
+    - name: Deploy Notification
+      run: echo "Deployment triggered for Render"
