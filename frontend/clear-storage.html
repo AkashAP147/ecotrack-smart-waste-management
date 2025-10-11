@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Clear EcoTrack Storage</title>
+</head>
+<body>
+    <h1>Clear EcoTrack Local Storage</h1>
+    <button onclick="clearStorage()">Clear Storage</button>
+    <div id="result"></div>
+    
+    <script>
+        function clearStorage() {
+            // Clear all localStorage items
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.clear();
+            
+            document.getElementById('result').innerHTML = '<p style="color: green;">Storage cleared! Please refresh the EcoTrack app.</p>';
+        }
+        
+        // Show current storage
+        document.addEventListener('DOMContentLoaded', function() {
+            const tokens = {
+                accessToken: localStorage.getItem('accessToken'),
+                refreshToken: localStorage.getItem('refreshToken')
+            };
+            
+            console.log('Current tokens:', tokens);
+            
+            if (tokens.accessToken) {
+                document.getElementById('result').innerHTML = '<p style="color: orange;">Found stored tokens. Click "Clear Storage" to fix network errors.</p>';
+            } else {
+                document.getElementById('result').innerHTML = '<p style="color: blue;">No tokens found in storage.</p>';
+            }
+        });
+    </script>
+</body>
+</html>
