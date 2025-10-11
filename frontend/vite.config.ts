@@ -42,11 +42,19 @@ export default defineConfig({
         },
       },
     },
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
   },
   optimizeDeps: {
     include: ['leaflet'],
+    exclude: ['@vite/client', '@vite/env'],
   },
   define: {
     global: 'globalThis',
+  },
+  esbuild: {
+    // Ensure compatibility with older browsers
+    target: 'es2020'
   },
 })

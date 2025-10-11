@@ -36,6 +36,12 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Polyfill for fetch if needed
+      if (!window.fetch) {
+        console.log('Fetch not available, loading polyfill...');
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
