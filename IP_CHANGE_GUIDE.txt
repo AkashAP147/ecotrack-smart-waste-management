@@ -1,0 +1,113 @@
+===============================================================================
+                    WHAT TO DO IF IP ADDRESS CHANGES
+===============================================================================
+
+🔍 STEP 1: Check Your New IP Address
+===============================================================================
+
+Run this command to find your current IP:
+ipconfig
+
+Look for "IPv4 Address" under "Wireless LAN adapter Wi-Fi"
+Example: IPv4 Address. . . . . . . . . . . : 192.168.1.100
+
+===============================================================================
+📝 STEP 2: Update Frontend Environment File (ONLY IF NEEDED)
+===============================================================================
+
+Location: d:\Project\Ecotrack\EcoTrack\frontend\.env
+
+Current content:
+VITE_API_URL=http://10.205.77.193:5000
+
+Update to your new IP:
+VITE_API_URL=http://[YOUR_NEW_IP]:5000
+
+Example:
+VITE_API_URL=http://192.168.1.100:5000
+
+Command to update:
+cd d:\Project\Ecotrack\EcoTrack\frontend
+echo VITE_API_URL=http://[YOUR_NEW_IP]:5000 > .env
+
+===============================================================================
+⚠️ IMPORTANT: You Might NOT Need to Update Anything!
+===============================================================================
+
+🎯 GOOD NEWS: The current setup uses PROXY, so IP changes usually don't matter!
+
+The frontend uses proxy configuration that automatically forwards API requests
+to localhost:5000, so even if your IP changes, the app should still work.
+
+===============================================================================
+🧪 STEP 3: Test Without Changes First
+===============================================================================
+
+Before updating anything:
+
+1. Start both servers normally:
+   Terminal 1: cd backend → node real-server.js
+   Terminal 2: cd frontend → npm run dev
+
+2. Check if desktop works: http://localhost:3000
+
+3. Check if mobile works: Use the Network URL from terminal output
+
+4. If both work → NO CHANGES NEEDED! ✅
+
+5. If mobile doesn't work → Then update the .env file
+
+===============================================================================
+🔧 STEP 4: Only Update If Mobile Doesn't Work
+===============================================================================
+
+If mobile shows network errors:
+
+1. Find your new IP:
+   ipconfig
+
+2. Update .env file:
+   cd d:\Project\Ecotrack\EcoTrack\frontend
+   echo VITE_API_URL=http://[NEW_IP]:5000 > .env
+
+3. Restart frontend:
+   Ctrl+C in frontend terminal
+   npm run dev
+
+4. Use new Network URL on mobile
+
+===============================================================================
+📱 STEP 5: Mobile Access URLs
+===============================================================================
+
+The frontend terminal will always show current Network URLs:
+
+➜  Network: http://192.168.1.100:3000/
+➜  Network: http://10.0.0.5:3000/
+
+Use whichever Network URL is shown - it updates automatically!
+
+===============================================================================
+🎯 QUICK SUMMARY
+===============================================================================
+
+90% of the time: NO CHANGES NEEDED
+- Just start the servers normally
+- Use the Network URL shown in terminal
+- Proxy handles the backend connection
+
+10% of the time: Update .env file
+- Only if mobile shows "network error"
+- Update VITE_API_URL with new IP
+- Restart frontend server
+
+===============================================================================
+⚡ FASTEST METHOD
+===============================================================================
+
+1. Start servers normally (no changes)
+2. If mobile works → Done! ✅
+3. If mobile fails → Update .env with new IP
+4. Restart frontend → Done! ✅
+
+===============================================================================

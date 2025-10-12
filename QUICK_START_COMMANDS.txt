@@ -1,0 +1,72 @@
+===============================================================================
+                        ECOTRACK - QUICK START COMMANDS
+                    (Run these commands tomorrow to start the app)
+===============================================================================
+
+🚀 STEP 1: Open 2 Terminal Windows
+===============================================================================
+
+Terminal 1 (Backend):
+cd d:\Project\Ecotrack\EcoTrack\backend
+node real-server.js
+
+Terminal 2 (Frontend):
+cd d:\Project\Ecotrack\EcoTrack\frontend
+npm run dev
+
+===============================================================================
+🌐 STEP 2: Access URLs (Wait 10 seconds after starting)
+===============================================================================
+
+💻 Desktop: http://localhost:3000
+📱 Mobile: Check the frontend terminal output for Network URLs like:
+   ➜  Network: http://192.168.x.x:3000/
+   ➜  Network: http://10.x.x.x:3000/
+
+Use the Network URL on your mobile device (same WiFi network)
+
+===============================================================================
+🔑 STEP 3: Login Credentials
+===============================================================================
+
+Admin: admin@ecotrack.com / admin123
+Collector: collector@ecotrack.com / collector123
+User: user@ecotrack.com / user123
+
+===============================================================================
+🔧 TROUBLESHOOTING (If needed)
+===============================================================================
+
+If ports are busy:
+netstat -ano | findstr ":5000"
+netstat -ano | findstr ":3000"
+taskkill /F /PID [PID_NUMBER]
+
+If mobile can't connect:
+1. Make sure both computer and mobile are on same WiFi
+2. Use the Network URL from frontend terminal output
+3. Try different Network URL if multiple are shown
+
+If database connection fails:
+- Check internet connection (uses MongoDB Atlas)
+- Backend will show connection status
+
+===============================================================================
+📱 MOBILE FEATURES
+===============================================================================
+
+✅ Login/Authentication - Works
+✅ Report Submission - Works (with file upload fallback)
+✅ View Reports - Works
+✅ Camera - May need file upload alternative
+✅ Location - May need manual entry alternative
+
+===============================================================================
+⚡ THAT'S IT! 
+===============================================================================
+
+Just run those 2 commands in 2 terminals and you're ready to go!
+Desktop: localhost:3000
+Mobile: Network URL from terminal output
+
+===============================================================================
