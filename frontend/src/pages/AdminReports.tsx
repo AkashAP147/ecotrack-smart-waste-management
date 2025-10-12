@@ -33,8 +33,8 @@ interface Report {
   address: string;
   estimatedQuantity: string;
   photoUrl?: string;
-  assignedCollector?: string;
-  assignedCollectorName?: string;
+  assignedTo?: string;
+  assignedToName?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -391,7 +391,7 @@ const AdminReports = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {report.assignedCollectorName || 'Unassigned'}
+                    {report.assignedToName || 'Unassigned'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                     {formatDate(report.createdAt)}
@@ -623,7 +623,7 @@ const AdminReports = () => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700">Assigned Collector</label>
                     <p className="mt-1 text-sm text-gray-900">
-                      {selectedReport.assignedCollectorName || 'Not assigned'}
+                      {selectedReport.assignedToName || 'Not assigned'}
                     </p>
                   </div>
                   

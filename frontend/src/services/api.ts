@@ -22,7 +22,10 @@ class ApiService {
   private api: AxiosInstance;
 
   constructor() {
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    // Use relative URL for proxy or fallback to environment variable
+    const baseURL = import.meta.env.PROD 
+      ? (import.meta.env.VITE_API_URL || 'http://localhost:5000')
+      : ''; // Use relative URLs in development (proxy will handle it)
     
     console.log('API Service initialized with baseURL:', baseURL);
     
@@ -320,6 +323,28 @@ class ApiService {
 
   async assignCollectorToReport(reportId: string, collectorId: string): Promise<ApiResponse<{ report: Report }>> {
     const response = await this.api.post('/api/admin/assign-collector', { reportId, collectorId });
+    return response.data;
+  }
+
+  async autoAssignReports(settings: {
+    prioritizeProximity?: boolean;
+    balanceWorkload?: boolean;
+    considerUrgency?: boolean;
+    maxAssignmentsPerCollector?: number;
+  }): Promise<ApiResponse<{ assignedCount: number; assignments: any[] }>> {
+    const response = await this.api.post('/api/admin/auto-assign', settings);
+    return response.data;
+  }
+
+  async getCollectorReports(collectorId: string, filters?: ReportFilters): Promise<PaginatedResponse<Report>> {
+    const response = await this.api.get(`/api/collector/${collectorId}/reports`, {
+      params: filters,
+    });
+    return response.data;
+  }
+
+  async assignSelfToReport(reportId: string): Promise<ApiResponse<{ report: Report }>> {
+    const response = await this.api.post(`/api/report/${reportId}/assign-self`);
     return response.data;
   }
 

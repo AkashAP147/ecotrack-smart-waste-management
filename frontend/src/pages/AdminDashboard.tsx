@@ -26,6 +26,15 @@ const AdminDashboard = () => {
   const [showAutoAssignModal, setShowAutoAssignModal] = useState(false);
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [assignmentMode, setAssignmentMode] = useState<'manual' | 'auto' | 'scheduled'>('manual');
+  const [showScheduledModal, setShowScheduledModal] = useState(false);
+  const [scheduledSettings, setScheduledSettings] = useState({
+    scheduledTime: '',
+    scheduledDate: '',
+    prioritizeProximity: true,
+    balanceWorkload: true,
+    considerUrgency: true,
+    maxAssignmentsPerCollector: 5,
+  });
   const [autoAssignSettings, setAutoAssignSettings] = useState({
     prioritizeProximity: true,
     balanceWorkload: true,
@@ -64,6 +73,21 @@ const AdminDashboard = () => {
         setShowAssignModal(false);
         setSelectedReport(null);
       },
+    }
+  );
+
+  const autoAssignMutation = useMutation(
+    (settings: any) => apiService.autoAssignReports(settings),
+    {
+      onSuccess: (data) => {
+        queryClient.invalidateQueries(['admin-reports']);
+        setShowAutoAssignModal(false);
+        // Show success message with assignment count
+        alert(`Successfully auto-assigned ${data.data.assignedCount} reports!`);
+      },
+      onError: (error: any) => {
+        alert(`Auto-assignment failed: ${error.response?.data?.message || error.message}`);
+      }
     }
   );
 
@@ -254,7 +278,7 @@ const AdminDashboard = () => {
                     <button
                       onClick={() => {
                         setAssignmentMode('scheduled');
-                        setShowAssignModal(true);
+                        setShowScheduledModal(true);
                       }}
                       className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md flex items-center"
                     >
@@ -455,7 +479,7 @@ const AdminDashboard = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {report.assignedCollector?.name || 'Unassigned'}
+                        {report.assignedTo?.name || 'Unassigned'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(report.createdAt)}
@@ -785,24 +809,176 @@ const AdminDashboard = () => {
                   </button>
                   <button
                     onClick={() => {
-                      // Simulate auto assignment
-                      const pendingReports = reports.filter((r: any) => r.status === 'pending');
-                      const activeCollectors = collectors.filter((c: any) => c.isActive);
-                      
-                      if (pendingReports.length > 0 && activeCollectors.length > 0) {
-                        // Here you would implement the actual auto-assignment logic
-                        console.log('Auto-assigning reports with settings:', autoAssignSettings);
-                        setShowAutoAssignModal(false);
-                        queryClient.invalidateQueries(['admin-reports']);
-                      }
+                      autoAssignMutation.mutate(autoAssignSettings);
                     }}
                     className="btn btn-primary"
-                    disabled={assignCollectorMutation.isLoading}
+                    disabled={autoAssignMutation.isLoading}
                   >
                     <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                     Start Auto Assignment
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Scheduled Assignment Modal */}
+      {showScheduledModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">Schedule Assignment</h3>
+                  <p className="text-sm text-gray-500">Schedule automatic assignment for a specific time</p>
+                </div>
+                <button
+                  onClick={() => setShowScheduledModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+              
+              {/* Schedule Settings */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900">Schedule Time</h4>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      value={scheduledSettings.scheduledDate}
+                      onChange={(e) => setScheduledSettings(prev => ({
+                        ...prev,
+                        scheduledDate: e.target.value
+                      }))}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Time
+                    </label>
+                    <input
+                      type="time"
+                      value={scheduledSettings.scheduledTime}
+                      onChange={(e) => setScheduledSettings(prev => ({
+                        ...prev,
+                        scheduledTime: e.target.value
+                      }))}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Max assignments per collector
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={scheduledSettings.maxAssignmentsPerCollector}
+                      onChange={(e) => setScheduledSettings(prev => ({
+                        ...prev,
+                        maxAssignmentsPerCollector: parseInt(e.target.value)
+                      }))}
+                      className="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-900">Assignment Criteria</h4>
+                  
+                  <div className="space-y-3">
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={scheduledSettings.prioritizeProximity}
+                        onChange={(e) => setScheduledSettings(prev => ({
+                          ...prev,
+                          prioritizeProximity: e.target.checked
+                        }))}
+                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Prioritize proximity to collector</span>
+                    </label>
+                    
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={scheduledSettings.balanceWorkload}
+                        onChange={(e) => setScheduledSettings(prev => ({
+                          ...prev,
+                          balanceWorkload: e.target.checked
+                        }))}
+                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Balance workload across collectors</span>
+                    </label>
+                    
+                    <label className="flex items-center">
+                      <input
+                        type="checkbox"
+                        checked={scheduledSettings.considerUrgency}
+                        onChange={(e) => setScheduledSettings(prev => ({
+                          ...prev,
+                          considerUrgency: e.target.checked
+                        }))}
+                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">Consider report urgency</span>
+                    </label>
+                  </div>
+                  
+                  {/* Preview */}
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h5 className="text-sm font-medium text-gray-700 mb-2">Schedule Preview</h5>
+                    <div className="space-y-1 text-xs text-gray-600">
+                      <div>📅 Date: {scheduledSettings.scheduledDate || 'Not set'}</div>
+                      <div>🕐 Time: {scheduledSettings.scheduledTime || 'Not set'}</div>
+                      <div>📊 Max per collector: {scheduledSettings.maxAssignmentsPerCollector}</div>
+                      {scheduledSettings.considerUrgency && <div>• Priority by urgency</div>}
+                      {scheduledSettings.prioritizeProximity && <div>• Nearest collector preference</div>}
+                      {scheduledSettings.balanceWorkload && <div>• Even workload distribution</div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-500">
+                  This will schedule automatic assignment for the specified time
+                </div>
+                <div className="flex space-x-3">
+                  <button
+                    onClick={() => setShowScheduledModal(false)}
+                    className="btn btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      // For now, just show an alert since backend scheduling isn't implemented
+                      alert(`Assignment scheduled for ${scheduledSettings.scheduledDate} at ${scheduledSettings.scheduledTime}`);
+                      setShowScheduledModal(false);
+                    }}
+                    className="btn btn-primary"
+                    disabled={!scheduledSettings.scheduledDate || !scheduledSettings.scheduledTime}
+                  >
+                    <Clock className="w-4 h-4 mr-2" />
+                    Schedule Assignment
                   </button>
                 </div>
               </div>

@@ -36,7 +36,7 @@ interface Report {
   address: string;
   estimatedQuantity: string;
   photoUrl?: string;
-  assignedCollector?: string;
+  assignedTo?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -52,14 +52,15 @@ const CollectorReports = () => {
   const [showDetails, setShowDetails] = useState(false);
 
   const { data: reportsData, isLoading, error, refetch } = useQuery(
-    ['collector-reports', page, statusFilter, urgencyFilter],
-    () => apiService.getReports({
+    ['collector-reports', user?._id, page, statusFilter, urgencyFilter],
+    () => apiService.getCollectorReports(user!._id, {
       page,
       limit: 10,
       status: statusFilter !== 'all' ? statusFilter as any : undefined,
-      wasteType: urgencyFilter !== 'all' ? urgencyFilter as any : undefined,
+      urgency: urgencyFilter !== 'all' ? urgencyFilter as any : undefined,
     }),
     {
+      enabled: !!user?._id,
       keepPreviousData: true,
     }
   );
@@ -380,7 +381,7 @@ const CollectorReports = () => {
                     </button>
                   )}
                   
-                  {report.status === 'assigned' && report.assignedCollector === user?._id && (
+                  {report.status === 'assigned' && report.assignedTo === user?._id && (
                     <button
                       onClick={() => handleStartPickup(report._id)}
                       disabled={startPickupMutation.isLoading}
@@ -395,7 +396,7 @@ const CollectorReports = () => {
                     </button>
                   )}
 
-                  {report.status === 'in_progress' && report.assignedCollector === user?._id && (
+                  {report.status === 'in_progress' && report.assignedTo === user?._id && (
                     <button
                       onClick={() => handleCompletePickup(report._id)}
                       disabled={completePickupMutation.isLoading}
@@ -410,7 +411,7 @@ const CollectorReports = () => {
                     </button>
                   )}
 
-                  {report.status === 'assigned' && report.assignedCollector !== user?._id && (
+                  {report.status === 'assigned' && report.assignedTo !== user?._id && (
                     <div className="text-sm text-gray-500 p-2 bg-gray-50 rounded">
                       <User className="w-4 h-4 inline mr-1" />
                       Assigned to another collector
@@ -617,7 +618,7 @@ const CollectorReports = () => {
                     </button>
                   )}
                   
-                  {selectedReport.status === 'assigned' && selectedReport.assignedCollector === user?._id && (
+                  {selectedReport.status === 'assigned' && selectedReport.assignedTo === user?._id && (
                     <button
                       onClick={() => {
                         handleStartPickup(selectedReport._id);
@@ -635,7 +636,7 @@ const CollectorReports = () => {
                     </button>
                   )}
 
-                  {selectedReport.status === 'in_progress' && selectedReport.assignedCollector === user?._id && (
+                  {selectedReport.status === 'in_progress' && selectedReport.assignedTo === user?._id && (
                     <button
                       onClick={() => {
                         handleCompletePickup(selectedReport._id);

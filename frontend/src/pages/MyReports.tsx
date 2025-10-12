@@ -212,9 +212,9 @@ const MyReports = () => {
                       )}
 
                       {/* Collector info */}
-                      {report.assignedCollector && typeof report.assignedCollector === 'object' && (
+                      {report.assignedTo && typeof report.assignedTo === 'object' && (
                         <div className="mt-2 text-sm text-gray-600">
-                          <strong>Assigned to:</strong> {report.assignedCollector.name}
+                          <strong>Assigned to:</strong> {report.assignedTo.name}
                         </div>
                       )}
 

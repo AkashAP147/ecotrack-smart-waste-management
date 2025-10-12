@@ -1,0 +1,347 @@
+===============================================================================
+                    ECOTRACK PROJECT - COMPLETE SETUP GUIDE
+===============================================================================
+
+📋 TABLE OF CONTENTS:
+1. Prerequisites & Software Installation
+2. Database Setup (MongoDB Atlas)
+3. Project Setup Commands
+4. Running the Project
+5. Mobile Device Setup (Android/iOS)
+6. Testing & Login Credentials
+7. Troubleshooting
+
+===============================================================================
+1. PREREQUISITES & SOFTWARE INSTALLATION
+===============================================================================
+
+🖥️ REQUIRED SOFTWARE FOR COMPUTER:
+
+1. Node.js (v16 or higher):
+   - Download: https://nodejs.org/
+   - Install the LTS version
+   - Verify: Open terminal and run: node --version
+
+2. Git (Optional but recommended):
+   - Download: https://git-scm.com/
+   - Install with default settings
+
+3. Code Editor (Optional):
+   - VS Code: https://code.visualstudio.com/
+   - Or any text editor
+
+📱 REQUIRED FOR MOBILE TESTING:
+- Android phone or iPhone
+- Internet browser (Chrome, Safari, Firefox)
+- Same WiFi network as computer
+- Camera and location permissions
+
+===============================================================================
+2. DATABASE SETUP (MONGODB ATLAS - FREE)
+===============================================================================
+
+🌐 MongoDB Atlas Setup (5 minutes):
+
+1. Go to: https://www.mongodb.com/atlas
+2. Click "Try Free" and create account
+3. Choose "Build a database" → "M0 FREE"
+4. Select any cloud provider and region
+5. Create cluster (wait 3-5 minutes)
+
+6. Create Database User:
+   - Click "Database Access" → "Add New Database User"
+   - Username: ecotrack_user
+   - Password: ecotrack123 (or create your own)
+   - Database User Privileges: "Read and write to any database"
+   - Click "Add User"
+
+7. Add IP Address:
+   - Click "Network Access" → "Add IP Address"
+   - Click "Allow Access from Anywhere" (0.0.0.0/0)
+   - Click "Confirm"
+
+8. Get Connection String:
+   - Click "Database" → "Connect" → "Connect your application"
+   - Copy the connection string
+   - Replace <password> with your password (ecotrack123)
+
+Example: mongodb+srv://ecotrack_user:ecotrack123@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+
+===============================================================================
+3. PROJECT SETUP COMMANDS
+===============================================================================
+
+📂 STEP 1: Navigate to Project
+cd d:\Project\Ecotrack\EcoTrack
+
+📂 STEP 2: Backend Setup
+cd backend
+
+📦 Install backend dependencies:
+npm install
+
+📝 Create config.env file in backend folder:
+NODE_ENV=development
+PORT=5000
+MONGODB_URI=mongodb+srv://ecotrack_user:ecotrack123@cluster0.xxxxx.mongodb.net/ecotrack?retryWrites=true&w=majority
+JWT_SECRET=your_super_secret_jwt_key_here_make_it_long_and_complex_12345
+JWT_REFRESH_SECRET=your_super_secret_refresh_jwt_key_here_make_it_long_and_complex_67890
+
+📁 Create uploads folder:
+mkdir uploads
+
+📂 STEP 3: Frontend Setup
+cd ..\frontend
+
+📦 Install frontend dependencies:
+npm install
+
+🔍 Find your computer's IP address:
+# Windows Command:
+ipconfig
+
+# Look for "IPv4 Address" under your WiFi adapter
+# Example: 192.168.1.100 or 10.0.0.5
+
+📝 Create .env file in frontend folder:
+VITE_API_URL=http://[YOUR_IP_ADDRESS]:5000
+
+# Replace [YOUR_IP_ADDRESS] with your actual IP
+# Example: VITE_API_URL=http://192.168.1.100:5000
+
+===============================================================================
+4. RUNNING THE PROJECT
+===============================================================================
+
+🚀 STEP 1: Start Backend Server
+
+📂 Open terminal/command prompt:
+cd d:\Project\Ecotrack\EcoTrack\backend
+
+▶️ Run command:
+node real-server.js
+
+✅ Success message should show:
+🚀 EcoTrack Real Backend running on port 5000
+📝 Environment: development
+🔗 Health check: http://localhost:5000/health
+🌐 API Base URL: http://localhost:5000/api
+🗄️  Database: MongoDB Atlas
+✅ MongoDB connected successfully
+
+---
+
+🚀 STEP 2: Start Frontend Server
+
+📂 Open NEW terminal/command prompt:
+cd d:\Project\Ecotrack\EcoTrack\frontend
+
+▶️ Run command:
+npm run dev
+
+✅ Success message should show:
+VITE v4.5.14  ready in 1266 ms
+
+➜  Local:   http://localhost:3000/
+➜  Network: http://192.168.1.100:3000/  ← Use this for mobile
+➜  Network: http://10.0.0.5:3000/       ← Or this
+
+🌐 DESKTOP ACCESS:
+- Open browser: http://localhost:3000
+
+📱 MOBILE ACCESS:
+- Use the Network URL: http://[YOUR_IP]:3000
+
+===============================================================================
+5. MOBILE DEVICE SETUP (STEP BY STEP)
+===============================================================================
+
+📱 ANDROID SETUP:
+
+Step 1: Connect to WiFi
+- Connect your Android phone to the SAME WiFi as your computer
+
+Step 2: Open Browser
+- Open Chrome, Firefox, or any browser on your phone
+
+Step 3: Enter URL
+- Type the Network URL from Step 4 above
+- Example: http://192.168.1.100:3000
+- Press Enter
+
+Step 4: Allow Permissions
+- When prompted, click "Allow" for:
+  ✅ Location access (for waste location)
+  ✅ Camera access (for taking photos)
+
+Step 5: Add to Home Screen (Optional)
+- In Chrome: Menu (3 dots) → "Add to Home screen"
+- Name it "EcoTrack"
+- Now you have an app icon!
+
+---
+
+📱 iPhone/iOS SETUP:
+
+Step 1: Connect to WiFi
+- Connect your iPhone to the SAME WiFi as your computer
+
+Step 2: Open Safari
+- Open Safari browser (works best on iOS)
+
+Step 3: Enter URL
+- Type the Network URL: http://[YOUR_IP]:3000
+- Example: http://192.168.1.100:3000
+
+Step 4: Allow Permissions
+- When prompted, tap "Allow" for:
+  ✅ Location access
+  ✅ Camera access
+
+Step 5: Add to Home Screen
+- Tap Share button (square with arrow)
+- Scroll down and tap "Add to Home Screen"
+- Name it "EcoTrack"
+- Tap "Add"
+
+---
+
+📱 SHARING WITH FRIENDS:
+
+To share with friends on same WiFi:
+1. Tell them to connect to your WiFi network
+2. Give them the Network URL: http://[YOUR_IP]:3000
+3. They can follow the mobile setup steps above
+
+To share with friends on different networks:
+1. You need to deploy to a hosting service (advanced)
+2. Or use tools like ngrok (advanced)
+3. Or they need to be on your local network
+
+===============================================================================
+6. TESTING & LOGIN CREDENTIALS
+===============================================================================
+
+🔑 TEST ACCOUNTS:
+
+👨‍💼 ADMIN ACCOUNT:
+Email: admin@ecotrack.com
+Password: admin123
+Features:
+- View all reports
+- Assign collectors to reports
+- Auto-assignment
+- Schedule assignments
+- User management
+- Dashboard statistics
+
+👷‍♂️ COLLECTOR ACCOUNT:
+Email: collector@ecotrack.com
+Password: collector123
+Features:
+- View assigned reports
+- Start/complete pickups
+- Update report status
+- Route optimization
+- Collection history
+
+👤 USER ACCOUNT:
+Email: user@ecotrack.com
+Password: user123
+Features:
+- Submit waste reports
+- Take photos with camera
+- Use location detection
+- Track report status
+- View submission history
+
+📱 MOBILE FEATURES TO TEST:
+✅ Camera - Take photos of waste
+✅ Location - Auto-detect current location
+✅ Touch interface - Mobile-optimized UI
+✅ Report submission - Complete workflow
+✅ Status tracking - Real-time updates
+
+===============================================================================
+7. TROUBLESHOOTING
+===============================================================================
+
+❌ COMMON ISSUES & SOLUTIONS:
+
+🔧 "Cannot connect to database":
+- Check MongoDB Atlas connection string in config.env
+- Ensure IP address 0.0.0.0/0 is added in Network Access
+- Verify username/password in connection string
+
+🔧 "Port 5000 already in use":
+# Windows:
+netstat -ano | findstr :5000
+taskkill /PID [PID_NUMBER] /F
+
+# Mac/Linux:
+lsof -ti:5000 | xargs kill -9
+
+🔧 "Frontend won't start":
+- Delete node_modules folder
+- Run: npm install
+- Run: npm run dev
+
+🔧 "Can't access from mobile":
+- Ensure phone and computer on same WiFi
+- Check Windows Firewall (allow port 3000 and 5000)
+- Try different network IP addresses shown in terminal
+- Restart frontend server: Ctrl+C then npm run dev
+
+🔧 "Camera not working on mobile":
+- Use HTTPS or localhost (some browsers require secure context)
+- Check browser permissions in phone settings
+- Try different browser (Chrome recommended for Android, Safari for iOS)
+
+🔧 "Location not working":
+- Enable location services in phone settings
+- Allow location access when prompted
+- Check browser location permissions
+
+🔧 Windows Firewall Issues:
+- Go to Windows Defender Firewall
+- Click "Allow an app through firewall"
+- Add Node.js if not present
+- Or temporarily disable firewall for testing
+
+===============================================================================
+📞 QUICK REFERENCE COMMANDS
+===============================================================================
+
+🚀 START PROJECT (Run these in order):
+
+Terminal 1 (Backend):
+cd d:\Project\Ecotrack\EcoTrack\backend
+node real-server.js
+
+Terminal 2 (Frontend):
+cd d:\Project\Ecotrack\EcoTrack\frontend
+npm run dev
+
+🌐 ACCESS URLS:
+Desktop: http://localhost:3000
+Mobile: http://[YOUR_IP]:3000 (check terminal for exact IP)
+
+🔑 LOGIN:
+Admin: admin@ecotrack.com / admin123
+Collector: collector@ecotrack.com / collector123
+User: user@ecotrack.com / user123
+
+===============================================================================
+🎉 CONGRATULATIONS!
+===============================================================================
+
+Your EcoTrack application is now running!
+
+✅ Desktop version at: http://localhost:3000
+✅ Mobile version at: http://[YOUR_IP]:3000
+✅ All features working: Camera, Location, Reports, Assignments
+✅ Ready to demo to friends and colleagues!
+
+For questions or issues, check the troubleshooting section above.
+
+Happy coding! 🚀

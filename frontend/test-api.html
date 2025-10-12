@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>EcoTrack API Test</h1>
+    <button onclick="testAPI()">Test API Connection</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Testing API connection...</p>';
+            
+            try {
+                // Test health endpoint
+                const healthResponse = await fetch('http://localhost:5000/health');
+                const healthData = await healthResponse.json();
+                
+                resultDiv.innerHTML += `<p style="color: green;">✅ Health Check: ${JSON.stringify(healthData)}</p>`;
+                
+                // Test login endpoint
+                const loginResponse = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@ecotrack.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                const loginData = await loginResponse.json();
+                resultDiv.innerHTML += `<p style="color: green;">✅ Login Test: ${JSON.stringify(loginData)}</p>`;
+                
+            } catch (error) {
+                resultDiv.innerHTML += `<p style="color: red;">❌ Error: ${error.message}</p>`;
+                console.error('API Test Error:', error);
+            }
+        }
+        
+        // Test on page load
+        window.onload = function() {
+            console.log('Environment check:');
+            console.log('Current origin:', window.location.origin);
+            console.log('Testing API connection...');
+            testAPI();
+        };
+    </script>
+</body>
+</html>

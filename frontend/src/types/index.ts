@@ -60,7 +60,7 @@ export interface Report {
   description: string;
   urgency: UrgencyLevel;
   status: ReportStatus;
-  assignedCollector?: string | User;
+  assignedTo?: string | User;
   assignedAt?: string;
   collectedAt?: string;
   resolvedAt?: string;

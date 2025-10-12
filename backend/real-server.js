@@ -12,13 +12,19 @@ const PORT = process.env.PORT || 5000;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+  origin: true, // Allow all origins for development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Debug middleware to log all requests
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} from ${req.ip}`);
+  next();
+});
 
 // Serve static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -72,7 +78,7 @@ const reportSchema = new mongoose.Schema({
   address: String,
   estimatedQuantity: String,
   photoUrl: String,
-  assignedCollector: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
 
 reportSchema.index({ location: '2dsphere' });
@@ -427,7 +433,7 @@ app.get('/api/report/me', authenticateToken, async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
-      .populate('assignedCollector', 'name email');
+      .populate('assignedTo', 'name email');
 
     const totalReports = await Report.countDocuments(query);
 
@@ -467,7 +473,7 @@ app.get('/api/report', authenticateToken, async (req, res) => {
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .populate('user', 'name email')
-      .populate('assignedCollector', 'name email');
+      .populate('assignedTo', 'name email');
 
     const totalReports = await Report.countDocuments(query);
 
@@ -1409,6 +1415,108 @@ app.put('/api/collector/:id/status', authenticateToken, async (req, res) => {
   }
 });
 
+// Get collector's assigned reports
+app.get('/api/collector/:id/reports', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const status = req.query.status;
+    const urgency = req.query.urgency;
+
+    // Check if user is the collector or admin
+    if (req.user.role !== 'admin' && req.user._id.toString() !== id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied'
+      });
+    }
+
+    const query = { assignedTo: id };
+    if (status && status !== 'all') query.status = status;
+    if (urgency && urgency !== 'all') query.urgency = urgency;
+
+    const reports = await Report.find(query)
+      .populate('user', 'name email')
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    const total = await Report.countDocuments(query);
+
+    res.json({
+      success: true,
+      data: {
+        reports,
+        pagination: {
+          currentPage: page,
+          totalPages: Math.ceil(total / limit),
+          totalReports: total,
+          hasNext: page < Math.ceil(total / limit),
+          hasPrev: page > 1
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Get collector reports error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Collector self-assign to report
+app.post('/api/report/:id/assign-self', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (req.user.role !== 'collector') {
+      return res.status(403).json({
+        success: false,
+        message: 'Only collectors can assign themselves to reports'
+      });
+    }
+
+    const report = await Report.findById(id);
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Report not found'
+      });
+    }
+
+    if (report.status !== 'pending') {
+      return res.status(400).json({
+        success: false,
+        message: 'Report is not available for assignment'
+      });
+    }
+
+    const updatedReport = await Report.findByIdAndUpdate(
+      id,
+      {
+        assignedTo: req.user._id,
+        status: 'assigned',
+        assignedAt: new Date()
+      },
+      { new: true }
+    ).populate('user', 'name email');
+
+    res.json({
+      success: true,
+      message: 'Successfully assigned to report',
+      data: { report: updatedReport }
+    });
+  } catch (error) {
+    console.error('Self-assign report error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
 app.get('/api/collector/:id/history', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -1456,6 +1564,146 @@ app.get('/api/collector/:id/history', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Get collector history error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
+
+// Auto-assignment API
+app.post('/api/admin/auto-assign', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. Admin role required.'
+      });
+    }
+
+    const { 
+      prioritizeProximity = true, 
+      balanceWorkload = true, 
+      considerUrgency = true, 
+      maxAssignmentsPerCollector = 5 
+    } = req.body;
+
+    // Get pending reports
+    let sortCriteria = { createdAt: 1 };
+    if (considerUrgency) {
+      // Sort by urgency priority (critical first, then high, medium, low)
+      sortCriteria = { createdAt: 1 }; // We'll handle urgency sorting in JavaScript
+    }
+    
+    const pendingReports = await Report.find({ status: 'pending' })
+      .sort(sortCriteria);
+    
+    // Sort by urgency if needed
+    if (considerUrgency) {
+      const urgencyOrder = { critical: 1, high: 2, medium: 3, low: 4 };
+      pendingReports.sort((a, b) => {
+        const aUrgency = urgencyOrder[a.urgency] || 5;
+        const bUrgency = urgencyOrder[b.urgency] || 5;
+        return aUrgency - bUrgency;
+      });
+    }
+
+    // Get active collectors
+    const activeCollectors = await User.find({ 
+      role: 'collector', 
+      isActive: true 
+    }).select('name email _id');
+
+    if (pendingReports.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No pending reports to assign',
+        data: { assignedCount: 0 }
+      });
+    }
+
+    if (activeCollectors.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No active collectors available'
+      });
+    }
+
+    // Get current workload for each collector
+    const collectorWorkloads = {};
+    for (const collector of activeCollectors) {
+      const currentAssignments = await Report.countDocuments({
+        assignedTo: collector._id,
+        status: { $in: ['assigned', 'in_progress'] }
+      });
+      collectorWorkloads[collector._id.toString()] = currentAssignments;
+    }
+
+    let assignedCount = 0;
+    const assignments = [];
+
+    // Auto-assign logic
+    for (const report of pendingReports) {
+      // Find collector with least workload (if balanceWorkload is enabled)
+      let selectedCollector;
+      
+      if (balanceWorkload) {
+        selectedCollector = activeCollectors.reduce((best, current) => {
+          const currentWorkload = collectorWorkloads[current._id.toString()] || 0;
+          const bestWorkload = collectorWorkloads[best._id.toString()] || 0;
+          
+          // Skip if collector has reached max assignments
+          if (currentWorkload >= maxAssignmentsPerCollector) return best;
+          
+          return currentWorkload < bestWorkload ? current : best;
+        });
+      } else {
+        // Simple round-robin assignment
+        selectedCollector = activeCollectors[assignedCount % activeCollectors.length];
+      }
+
+      // Check if selected collector can take more assignments
+      const currentWorkload = collectorWorkloads[selectedCollector._id.toString()] || 0;
+      if (currentWorkload >= maxAssignmentsPerCollector) {
+        continue; // Skip this report if no collector available
+      }
+
+      // Assign the report
+      await Report.findByIdAndUpdate(report._id, {
+        assignedTo: selectedCollector._id,
+        status: 'assigned',
+        assignedAt: new Date()
+      });
+
+      // Update workload tracking
+      collectorWorkloads[selectedCollector._id.toString()] = currentWorkload + 1;
+      
+      assignments.push({
+        reportId: report._id,
+        collectorId: selectedCollector._id,
+        collectorName: selectedCollector.name
+      });
+      
+      assignedCount++;
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully auto-assigned ${assignedCount} reports`,
+      data: { 
+        assignedCount,
+        assignments,
+        settings: {
+          prioritizeProximity,
+          balanceWorkload,
+          considerUrgency,
+          maxAssignmentsPerCollector
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Auto-assignment error:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'
