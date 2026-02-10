@@ -61,6 +61,9 @@ export interface Report {
   urgency: UrgencyLevel;
   status: ReportStatus;
   assignedTo?: string | User;
+  assignedToName?: string;
+  userName?: string;
+  userEmail?: string;
   assignedAt?: string;
   collectedAt?: string;
   resolvedAt?: string;

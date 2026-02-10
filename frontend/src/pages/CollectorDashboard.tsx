@@ -178,8 +178,12 @@ const CollectorDashboard = () => {
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'No date';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Invalid date';
+    
+    return date.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -459,7 +463,7 @@ const CollectorDashboard = () => {
                   {route.reports?.map((routePoint: any, index: number) => (
                     <div
                       key={routePoint.report._id}
-                      className={`border rounded-lg p-4 transition-colors ${
+                      className={`border rounded-lg p-3 sm:p-4 transition-colors ${
                         selectedReport === routePoint.report._id
                           ? 'border-primary-300 bg-primary-50'
                           : 'border-gray-200 hover:bg-gray-50'
@@ -468,37 +472,61 @@ const CollectorDashboard = () => {
                         selectedReport === routePoint.report._id ? null : routePoint.report._id
                       )}
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <span className="bg-primary-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
-                              {index + 1}
-                            </span>
-                            <span className={`badge ${getUrgencyBadge(routePoint.report.urgency)}`}>
-                              {routePoint.report.urgency}
-                            </span>
-                            <span className="badge badge-secondary">
-                              {routePoint.report.wasteType}
-                            </span>
-                          </div>
-                          
-                          <p className="font-medium text-gray-900 mb-1">
-                            {routePoint.report.description.substring(0, 60)}...
-                          </p>
-                          
-                          <div className="flex items-center text-sm text-gray-600 space-x-4">
-                            <div className="flex items-center">
-                              <MapPin className="w-4 h-4 mr-1" />
-                              {routePoint.report.address || 'No address'}
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                        <div className="flex items-start space-x-3 flex-1">
+                          {routePoint.report.photoUrl ? (
+                            <img
+                              src={`http://localhost:5000${routePoint.report.photoUrl}`}
+                              alt="Waste report"
+                              className="w-16 h-16 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+                              onLoad={() => console.log('Route image loaded:', `http://localhost:5000${routePoint.report.photoUrl}`)}
+                              onError={(e) => {
+                                console.log('Route image failed:', `http://localhost:5000${routePoint.report.photoUrl}`);
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-16 h-16 bg-gray-200 rounded-lg border border-gray-200 flex-shrink-0 flex items-center justify-center">
+                              <span className="text-gray-400 text-xs">No image</span>
                             </div>
-                            <div className="flex items-center">
-                              <Clock className="w-4 h-4 mr-1" />
-                              {formatTime(routePoint.estimatedTime)}
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <span className="bg-primary-600 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center flex-shrink-0">
+                                {index + 1}
+                              </span>
+                              <span className={`badge text-xs ${getUrgencyBadge(routePoint.report.urgency)} flex-shrink-0`}>
+                                {routePoint.report.urgency}
+                              </span>
+                              <span className="badge badge-secondary text-xs flex-shrink-0">
+                                {routePoint.report.wasteType}
+                              </span>
+                            </div>
+                            
+                            <p className="font-medium text-gray-900 mb-2 text-sm">
+                              {routePoint.report.description}
+                            </p>
+                            
+                            <div className="space-y-1 text-xs text-gray-600">
+                              <div className="flex items-start">
+                                <MapPin className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
+                                <span className="font-medium mr-1">
+                                  {routePoint.report.status === 'in_progress' ? 'Pickup:' : 'Location:'}
+                                </span>
+                                <span className="truncate">
+                                  {routePoint.report.address || 
+                                   `${routePoint.report.location?.coordinates?.[1]?.toFixed(4) || 'Unknown'}, ${routePoint.report.location?.coordinates?.[0]?.toFixed(4) || 'Unknown'}`}
+                                </span>
+                              </div>
+                              <div className="flex items-center">
+                                <Clock className="w-3 h-3 mr-1 flex-shrink-0" />
+                                <span>Est: {formatTime(routePoint.estimatedTime)}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                         
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-wrap items-center gap-1 sm:gap-2">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -507,24 +535,40 @@ const CollectorDashboard = () => {
                                 routePoint.report.location.coordinates[0]
                               );
                             }}
-                            className="btn btn-ghost btn-sm"
+                            className="btn btn-ghost btn-xs sm:btn-sm p-1 sm:p-2"
                             title="Open in Maps"
                           >
-                            <Navigation className="w-4 h-4" />
+                            <Navigation className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                           
                           {routePoint.report.status === 'assigned' && (
-                            <button 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStartPickup(routePoint.report._id);
-                              }}
-                              disabled={startPickupMutation.isLoading}
-                              className="btn btn-primary btn-sm"
-                            >
-                              <Play className="w-4 h-4 mr-1" />
-                              Start
-                            </button>
+                            <>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleStartPickup(routePoint.report._id);
+                                }}
+                                disabled={startPickupMutation.isLoading}
+                                className="btn btn-primary btn-xs sm:btn-sm px-2 py-1"
+                                title="Start pickup and begin navigation"
+                              >
+                                <Play className="w-3 h-3 mr-1" />
+                                <span className="hidden xs:inline">Start</span>
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openInMaps(
+                                    routePoint.report.location.coordinates[1],
+                                    routePoint.report.location.coordinates[0]
+                                  );
+                                }}
+                                className="btn btn-outline btn-xs sm:btn-sm px-2 py-1"
+                                title="Navigate to pickup location"
+                              >
+                                <Navigation className="w-3 h-3" />
+                              </button>
+                            </>
                           )}
                           
                           {routePoint.report.status === 'in_progress' && (
@@ -538,10 +582,10 @@ const CollectorDashboard = () => {
                                 });
                               }}
                               disabled={completePickupMutation.isLoading}
-                              className="btn btn-success btn-sm"
+                              className="btn btn-success btn-xs sm:btn-sm px-2 py-1"
                             >
-                              <Square className="w-4 h-4 mr-1" />
-                              Complete
+                              <Square className="w-3 h-3 mr-1" />
+                              <span className="hidden xs:inline">Complete</span>
                             </button>
                           )}
                         </div>
@@ -612,7 +656,7 @@ const CollectorDashboard = () => {
                             {pickup.status}
                           </span>
                           <span>•</span>
-                          <span>{formatDate(pickup.endTime || pickup.startTime)}</span>
+                          <span>{formatDate(pickup.endTime || pickup.startTime || pickup.createdAt)}</span>
                         </div>
                         {pickup.duration && (
                           <p className="text-sm text-gray-500 mt-1">
@@ -650,40 +694,77 @@ const CollectorDashboard = () => {
           ) : (
             <div className="space-y-3">
               {todayReports.slice(0, 5).map((report: any) => (
-                <div key={report._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-3 h-3 rounded-full ${
+                <div key={report._id} className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <div className="flex items-start space-x-3">
+                    {report.photoUrl ? (
+                      <img
+                        src={`http://localhost:5000${report.photoUrl}`}
+                        alt="Waste report"
+                        className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg border border-gray-200"
+                        onLoad={() => console.log('Image loaded:', `http://localhost:5000${report.photoUrl}`)}
+                        onError={(e) => {
+                          console.log('Image failed to load:', `http://localhost:5000${report.photoUrl}`);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-lg border border-gray-200 flex items-center justify-center">
+                        <span className="text-gray-400 text-xs">No image</span>
+                      </div>
+                    )}
+                    <div className={`w-3 h-3 rounded-full mt-2 ${
                       report.urgency === 'critical' ? 'bg-red-500' :
                       report.urgency === 'high' ? 'bg-orange-500' :
                       report.urgency === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
                     }`}></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900">
-                        {report.description.substring(0, 60)}...
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {report.description}
                       </p>
-                      <div className="flex items-center mt-1 text-xs text-gray-500">
-                        <MapPin className="w-3 h-3 mr-1" />
-                        {report.address}
-                        <span className="mx-2">•</span>
+                      <div className="flex flex-wrap gap-1 mt-1 text-xs text-gray-500">
+                        <div className="flex items-center">
+                          <MapPin className="w-3 h-3 mr-1" />
+                          <span className="font-medium">
+                            {report.status === 'in_progress' ? 'At Pickup:' : 'Location:'}
+                          </span>
+                        </div>
+                        <span className="truncate">
+                          {report.address || `${report.location?.coordinates?.[1]?.toFixed(4) || 'Unknown'}, ${report.location?.coordinates?.[0]?.toFixed(4) || 'Unknown'}`}
+                        </span>
+                        <span>•</span>
                         <span className="capitalize">{report.wasteType}</span>
-                        <span className="mx-2">•</span>
+                        <span>•</span>
                         <span className="capitalize">{report.urgency}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(report.status)}`}>
+                  <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 mt-2 sm:mt-0">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getStatusBadge(report.status)}`}>
                       {report.status.replace('_', ' ')}
                     </span>
                     {report.status === 'assigned' && (
-                      <button 
-                        onClick={() => handleStartPickup(report._id)}
-                        disabled={startPickupMutation.isLoading}
-                        className="btn btn-sm btn-primary"
-                      >
-                        <Play className="w-3 h-3 mr-1" />
-                        Start
-                      </button>
+                      <div className="flex gap-1 sm:gap-2">
+                        <button 
+                          onClick={() => handleStartPickup(report._id)}
+                          disabled={startPickupMutation.isLoading}
+                          className="btn btn-sm btn-primary flex-shrink-0"
+                          title="Start pickup and get navigation"
+                        >
+                          <Play className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline">Start</span>
+                        </button>
+                        <button
+                          onClick={() => openInMaps(
+                            report.location?.coordinates?.[1] || 0,
+                            report.location?.coordinates?.[0] || 0
+                          )}
+                          className="btn btn-sm btn-outline flex-shrink-0"
+                          title="Navigate to location"
+                        >
+                          <Navigation className="w-4 h-4 mr-1" />
+                          <span className="hidden sm:inline">Go</span>
+                        </button>
+                      </div>
                     )}
                     {report.status === 'in_progress' && (
                       <button 
@@ -693,10 +774,10 @@ const CollectorDashboard = () => {
                           notes: 'Completed successfully'
                         })}
                         disabled={completePickupMutation.isLoading}
-                        className="btn btn-sm btn-success"
+                        className="btn btn-sm btn-success flex-shrink-0"
                       >
-                        <Square className="w-3 h-3 mr-1" />
-                        Complete
+                        <Square className="w-4 h-4 mr-1" />
+                        <span className="hidden sm:inline">Complete</span>
                       </button>
                     )}
                   </div>

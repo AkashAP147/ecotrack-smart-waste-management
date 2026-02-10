@@ -68,10 +68,16 @@ const AdminDashboard = () => {
     ({ reportId, collectorId }: { reportId: string; collectorId: string }) =>
       apiService.assignCollectorToReport(reportId, collectorId),
     {
-      onSuccess: () => {
+      onSuccess: (data) => {
         queryClient.invalidateQueries(['admin-reports']);
         setShowAssignModal(false);
         setSelectedReport(null);
+        // Show success message
+        alert(`Successfully assigned report to collector!`);
+      },
+      onError: (error: any) => {
+        console.error('Assignment error:', error);
+        alert(`Assignment failed: ${error.response?.data?.message || error.message}`);
       },
     }
   );

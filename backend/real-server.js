@@ -26,8 +26,23 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+// Serve static files with debug logging and CORS
+app.use('/uploads', (req, res, next) => {
+  console.log(`📁 Static file request: ${req.path}`);
+  console.log(`   Full URL: http://localhost:${PORT}${req.originalUrl}`);
+  console.log(`   File path would be: ${path.join(__dirname, 'uploads', req.path)}`);
+  
+  // Add CORS headers for images
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
+  
+  next();
+}, express.static(path.join(__dirname, 'uploads'), {
+  // Add options for better file serving
+  maxAge: '1d',
+  etag: false
+}));
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
@@ -173,6 +188,37 @@ app.get('/health', async (req, res) => {
       status: 'unhealthy',
       error: error.message
     });
+  }
+});
+
+// Test images endpoint
+app.get('/test-uploads', (req, res) => {
+  try {
+    const fs = require('fs');
+    const uploadsPath = path.join(__dirname, 'uploads');
+    
+    if (!fs.existsSync(uploadsPath)) {
+      return res.json({
+        error: 'Uploads directory does not exist',
+        path: uploadsPath
+      });
+    }
+    
+    const files = fs.readdirSync(uploadsPath);
+    const testFiles = files.slice(0, 5).map(file => ({
+      filename: file,
+      url: `/uploads/${file}`,
+      fullUrl: `http://localhost:${PORT}/uploads/${file}`,
+      exists: fs.existsSync(path.join(uploadsPath, file))
+    }));
+    
+    res.json({
+      uploadsPath,
+      totalFiles: files.length,
+      testFiles
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -463,24 +509,35 @@ app.get('/api/report', authenticateToken, async (req, res) => {
     const limit = parseInt(req.query.limit) || 10;
     const status = req.query.status;
     const wasteType = req.query.wasteType;
+    const urgency = req.query.urgency;
 
     const query = {};
-    if (status) query.status = status;
-    if (wasteType) query.wasteType = wasteType;
+    if (status && status !== 'all') query.status = status;
+    if (wasteType && wasteType !== 'all') query.wasteType = wasteType;
+    if (urgency && urgency !== 'all') query.urgency = urgency;
 
     const reports = await Report.find(query)
       .sort({ createdAt: -1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .populate('user', 'name email')
-      .populate('assignedTo', 'name email');
+      .populate('assignedTo', 'name email')
+      .lean(); // Use lean() for better performance
+
+    // Transform reports to include assignedToName and ensure consistent format  
+    const transformedReports = reports.map(report => ({
+      ...report,
+      assignedToName: report.assignedTo?.name || null,
+      userName: report.user?.name || 'Unknown User',
+      userEmail: report.user?.email || ''
+    }));
 
     const totalReports = await Report.countDocuments(query);
 
     res.json({
       success: true,
       data: {
-        reports,
+        reports: transformedReports,
         pagination: {
           currentPage: page,
           totalPages: Math.ceil(totalReports / limit),
@@ -917,6 +974,10 @@ app.get('/api/collector/dashboard', authenticateToken, async (req, res) => {
       status: 'collected'
     }).populate('user', 'name email').sort({ updatedAt: -1 }).limit(5);
 
+    // Debug logging
+    console.log('Today reports photoUrls:', todayReports.map(r => ({ id: r._id, photoUrl: r.photoUrl })));
+    console.log('Recent pickups photoUrls:', recentPickups.map(r => ({ id: r._id, photoUrl: r.photoUrl })));
+
     res.json({
       success: true,
       data: {
@@ -1347,11 +1408,16 @@ app.get('/api/collector/:id/route', authenticateToken, async (req, res) => {
     const route = {
       totalDistance: Math.random() * 20 + 5, // 5-25 km
       estimatedTime: Math.random() * 120 + 30, // 30-150 minutes
+      reports: assignedReports.map((report, index) => ({
+        report: report,
+        estimatedTime: Math.random() * 20 + 5, // 5-25 minutes per stop
+        estimatedArrival: new Date(Date.now() + (index * 30 * 60000) + Math.random() * 1800000).toISOString() // Staggered arrivals
+      })),
       waypoints: assignedReports.map(report => ({
         reportId: report._id,
-        lat: report.lat,
-        lng: report.lng,
-        address: report.address,
+        lat: report.location?.coordinates?.[1] || 0,
+        lng: report.location?.coordinates?.[0] || 0,
+        address: report.address || 'Location not specified',
         estimatedArrival: new Date(Date.now() + Math.random() * 3600000).toISOString()
       }))
     };
@@ -1440,14 +1506,48 @@ app.get('/api/collector/:id/reports', authenticateToken, async (req, res) => {
       .populate('user', 'name email')
       .skip((page - 1) * limit)
       .limit(limit)
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean(); // Use lean() for better performance
+
+    // Debug raw reports before transformation
+    console.log('\\n=== RAW REPORTS DEBUG ===');
+    console.log('Raw reports count:', reports.length);
+    reports.slice(0, 2).forEach((report, index) => {
+      console.log(`Raw Report ${index + 1}:`);
+      console.log('  ID:', report._id);
+      console.log('  Description:', report.description?.substring(0, 30));
+      console.log('  PhotoUrl:', report.photoUrl);
+      console.log('  PhotoUrl exists:', !!report.photoUrl);
+      console.log('  All fields:', Object.keys(report));
+    });
+    console.log('=== END RAW DEBUG ===\\n');
+
+    // Transform reports to include userName and ensure consistent format
+    const transformedReports = reports.map(report => ({
+      ...report,
+      userName: report.user?.name || 'Unknown User',
+      userEmail: report.user?.email || ''
+    }));
+
+    // Enhanced debug logging 
+    console.log('\n=== COLLECTOR REPORTS DEBUG ===');
+    console.log('Total reports found:', transformedReports.length);
+    transformedReports.forEach((report, index) => {
+      console.log(`Report ${index + 1}:`);
+      console.log('  ID:', report._id);
+      console.log('  Description:', report.description.substring(0, 30));
+      console.log('  PhotoUrl:', report.photoUrl);
+      console.log('  PhotoUrl type:', typeof report.photoUrl);
+      console.log('  UserName:', report.userName);
+    });
+    console.log('=== END DEBUG ===\n');
 
     const total = await Report.countDocuments(query);
 
     res.json({
       success: true,
       data: {
-        reports,
+        reports: transformedReports,
         pagination: {
           currentPage: page,
           totalPages: Math.ceil(total / limit),

@@ -19,27 +19,7 @@ import { apiService } from '@/services/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { cn } from '@/utils/cn';
 import { useAuthStore } from '@/store/authStore';
-
-interface Report {
-  _id: string;
-  user: string;
-  userName: string;
-  userEmail: string;
-  description: string;
-  wasteType: string;
-  urgency: 'low' | 'medium' | 'high' | 'critical';
-  status: 'pending' | 'assigned' | 'in_progress' | 'collected' | 'resolved';
-  location: {
-    lat: number;
-    lng: number;
-  };
-  address: string;
-  estimatedQuantity: string;
-  photoUrl?: string;
-  assignedTo?: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { Report } from '@/types';
 
 const CollectorReports = () => {
   const { user } = useAuthStore();
@@ -67,6 +47,10 @@ const CollectorReports = () => {
 
   const reports = reportsData?.data?.reports || [];
   const pagination = reportsData?.data?.pagination;
+
+  // Debug logging for photoUrls
+  console.log('CollectorReports - fetched reports:', reports);
+  console.log('PhotoUrls in reports:', reports.map(r => ({ id: r._id, photoUrl: r.photoUrl, description: r.description.substring(0, 20) })));
 
   const getStatusColor = (status: string) => {
     const colors = {
@@ -317,7 +301,7 @@ const CollectorReports = () => {
                       <div className="space-y-2 text-sm text-gray-600">
                         <div className="flex items-center space-x-2">
                           <MapPin className="w-4 h-4" />
-                          <span>{report.address}</span>
+                          <span>{report.address || `Coordinates: ${report.location?.coordinates?.[1]?.toFixed(4) || 'Unknown'}, ${report.location?.coordinates?.[0]?.toFixed(4) || 'Unknown'}`}</span>
                         </div>
                         <div className="flex items-center space-x-4">
                           <span className="font-medium">Type:</span>
@@ -334,35 +318,71 @@ const CollectorReports = () => {
                       </div>
                     </div>
                     
-                    {report.photoUrl && (
-                      <div className="ml-4 flex-shrink-0">
-                        <img
-                          src={`http://localhost:5000${report.photoUrl}`}
-                          alt="Waste report"
-                          className="w-20 h-20 object-cover rounded-lg"
-                        />
+                    <div className="ml-4 flex-shrink-0 w-20 h-20">
+                      <div className="w-20 h-20 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden">
+                        {report.photoUrl ? (
+                          <img
+                            src={`http://localhost:5000${report.photoUrl}`}
+                            alt=""
+                            className="w-full h-full object-cover"
+                            onLoad={(e) => {
+                              console.log('✅ Image loaded successfully!');
+                              console.log('  PhotoURL:', report.photoUrl);
+                              console.log('  Full URL:', `http://localhost:5000${report.photoUrl}`);
+                              console.log('  Image dimensions:', e.currentTarget.naturalWidth, 'x', e.currentTarget.naturalHeight);
+                            }}
+                            onError={(e) => {
+                              console.log('❌ Image failed to load!');
+                              console.log('  PhotoURL:', report.photoUrl);
+                              console.log('  Full URL:', `http://localhost:5000${report.photoUrl}`);
+                              console.log('  Error event:', e);
+                              
+                              // Test the URL directly
+                              fetch(`http://localhost:5000${report.photoUrl}`)
+                                .then(response => {
+                                  console.log('  Fetch test - Status:', response.status);
+                                  console.log('  Fetch test - OK:', response.ok);
+                                  console.log('  Fetch test - Headers:', [...response.headers.entries()]);
+                                })
+                                .catch(fetchError => {
+                                  console.log('  Fetch test - Error:', fetchError);
+                                });
+                              
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                parent.innerHTML = '<span class="text-xs text-red-500">Load failed</span>';
+                              }
+                            }}
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-400">No photo</span>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
                 
-                <div className="mt-4 lg:mt-0 lg:ml-6 flex flex-col space-y-2">
+                <div className="mt-4 lg:mt-0 lg:ml-6 flex flex-col sm:flex-row sm:flex-wrap gap-2">
                   {/* Navigation Button */}
                   <button
-                    onClick={() => openInMaps(report.location.lat, report.location.lng)}
-                    className="btn btn-outline"
+                    onClick={() => openInMaps(report.location?.coordinates?.[1] || 0, report.location?.coordinates?.[0] || 0)}
+                    className="btn btn-outline btn-sm min-w-0 flex-shrink-0"
                   >
-                    <Navigation className="w-4 h-4 mr-2" />
-                    Navigate
+                    <Navigation className="w-4 h-4 mr-1 sm:mr-2" />
+                    <span className="hidden xs:inline">Navigate</span>
+                    <span className="xs:hidden">Nav</span>
                   </button>
 
                   {/* View Details Button */}
                   <button 
                     onClick={() => handleViewDetails(report)}
-                    className="btn btn-secondary"
+                    className="btn btn-secondary btn-sm min-w-0 flex-shrink-0"
                   >
-                    <Eye className="w-4 h-4 mr-2" />
-                    View Details
+                    <Eye className="w-4 h-4 mr-1 sm:mr-2" />
+                    <span className="hidden xs:inline">View Details</span>
+                    <span className="xs:hidden">Details</span>
                   </button>
 
                   {/* Status-specific Actions */}
@@ -370,44 +390,58 @@ const CollectorReports = () => {
                     <button
                       onClick={() => handleAssignToSelf(report._id)}
                       disabled={assignToSelfMutation.isLoading}
-                      className="btn btn-primary"
+                      className="btn btn-primary btn-sm min-w-0 flex-shrink-0"
                     >
                       {assignToSelfMutation.isLoading ? (
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        <RefreshCw className="w-4 h-4 mr-1 sm:mr-2 animate-spin" />
                       ) : (
-                        <Truck className="w-4 h-4 mr-2" />
+                        <Truck className="w-4 h-4 mr-1 sm:mr-2" />
                       )}
-                      {assignToSelfMutation.isLoading ? 'Assigning...' : 'Assign to Me'}
+                      <span className="hidden xs:inline">{assignToSelfMutation.isLoading ? 'Assigning...' : 'Assign to Me'}</span>
+                      <span className="xs:hidden">Assign</span>
                     </button>
                   )}
                   
                   {report.status === 'assigned' && report.assignedTo === user?._id && (
-                    <button
-                      onClick={() => handleStartPickup(report._id)}
-                      disabled={startPickupMutation.isLoading}
-                      className="btn btn-success"
-                    >
-                      {startPickupMutation.isLoading ? (
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                      )}
-                      {startPickupMutation.isLoading ? 'Starting...' : 'Start Pickup'}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleStartPickup(report._id)}
+                        disabled={startPickupMutation.isLoading}
+                        className="btn btn-success btn-sm min-w-0 flex-shrink-0"
+                      >
+                        {startPickupMutation.isLoading ? (
+                          <RefreshCw className="w-4 h-4 mr-1 sm:mr-2 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 mr-1 sm:mr-2" />
+                        )}
+                        <span className="hidden xs:inline">{startPickupMutation.isLoading ? 'Starting...' : 'Start Pickup'}</span>
+                        <span className="xs:hidden">Start</span>
+                      </button>
+                      <button
+                        onClick={() => openInMaps(report.location?.coordinates?.[1] || 0, report.location?.coordinates?.[0] || 0)}
+                        className="btn btn-outline btn-sm min-w-0 flex-shrink-0"
+                        title="Navigate to location before pickup"
+                      >
+                        <Navigation className="w-4 h-4 mr-1 sm:mr-2" />
+                        <span className="hidden xs:inline">Navigate</span>
+                        <span className="xs:hidden">Go</span>
+                      </button>
+                    </>
                   )}
 
                   {report.status === 'in_progress' && report.assignedTo === user?._id && (
                     <button
                       onClick={() => handleCompletePickup(report._id)}
                       disabled={completePickupMutation.isLoading}
-                      className="btn btn-success"
+                      className="btn btn-success btn-sm min-w-0 flex-shrink-0"
                     >
                       {completePickupMutation.isLoading ? (
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        <RefreshCw className="w-4 h-4 mr-1 sm:mr-2 animate-spin" />
                       ) : (
-                        <Package className="w-4 h-4 mr-2" />
+                        <Package className="w-4 h-4 mr-1 sm:mr-2" />
                       )}
-                      {completePickupMutation.isLoading ? 'Completing...' : 'Complete Pickup'}
+                      <span className="hidden xs:inline">{completePickupMutation.isLoading ? 'Completing...' : 'Complete Pickup'}</span>
+                      <span className="xs:hidden">Complete</span>
                     </button>
                   )}
 
@@ -535,10 +569,15 @@ const CollectorReports = () => {
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Location</h3>
                   <div className="flex items-center space-x-2 text-gray-700">
                     <MapPin className="w-4 h-4" />
-                    <span>{selectedReport.address}</span>
+                    <span>{selectedReport.address || `Coordinates: ${selectedReport.location?.coordinates?.[1]?.toFixed(4) || 'Unknown'}, ${selectedReport.location?.coordinates?.[0]?.toFixed(4) || 'Unknown'}`}</span>
                   </div>
+                  {!selectedReport.address && selectedReport.location?.coordinates?.[1] && selectedReport.location?.coordinates?.[0] && (
+                    <p className="text-sm text-amber-600 mt-1">
+                      📍 Address not provided - showing coordinates (lat, lng)
+                    </p>
+                  )}
                   <button
-                    onClick={() => openInMaps(selectedReport.location.lat, selectedReport.location.lng)}
+                    onClick={() => openInMaps(selectedReport.location?.coordinates?.[1] || 0, selectedReport.location?.coordinates?.[0] || 0)}
                     className="mt-2 btn btn-outline btn-sm"
                   >
                     <Navigation className="w-4 h-4 mr-2" />
@@ -587,16 +626,33 @@ const CollectorReports = () => {
                 </div>
 
                 {/* Photo */}
-                {selectedReport.photoUrl && (
-                  <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Photo</h3>
-                    <img
-                      src={`http://localhost:5000${selectedReport.photoUrl}`}
-                      alt="Waste report"
-                      className="w-full max-w-md h-64 object-cover rounded-lg"
-                    />
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Photo</h3>
+                  <div className="w-full max-w-md h-64 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center overflow-hidden">
+                    {selectedReport.photoUrl ? (
+                      <img
+                        src={`http://localhost:5000${selectedReport.photoUrl}`}
+                        alt=""
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          console.log('❌ Modal image failed:', selectedReport.photoUrl);
+                          console.log('Full URL tried:', `http://localhost:5000${selectedReport.photoUrl}`);
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<div class="flex items-center justify-center h-full"><span class="text-red-500 text-sm">Image failed to load</span></div>';
+                          }
+                        }}
+                        onLoad={() => {
+                          console.log('✅ Modal image loaded:', selectedReport.photoUrl);
+                        }}
+                      />
+                    ) : (
+                      <span className="text-gray-500">No photo available</span>
+                    )}
                   </div>
-                )}
+                </div>
 
                 {/* Action Buttons */}
                 <div className="flex flex-wrap gap-2 pt-4 border-t">
@@ -619,21 +675,32 @@ const CollectorReports = () => {
                   )}
                   
                   {selectedReport.status === 'assigned' && selectedReport.assignedTo === user?._id && (
-                    <button
-                      onClick={() => {
-                        handleStartPickup(selectedReport._id);
-                        setShowDetails(false);
-                      }}
-                      disabled={startPickupMutation.isLoading}
-                      className="btn btn-success"
-                    >
-                      {startPickupMutation.isLoading ? (
-                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                      ) : (
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                      )}
-                      {startPickupMutation.isLoading ? 'Starting...' : 'Start Pickup'}
-                    </button>
+                    <>
+                      <button
+                        onClick={() => {
+                          handleStartPickup(selectedReport._id);
+                          setShowDetails(false);
+                        }}
+                        disabled={startPickupMutation.isLoading}
+                        className="btn btn-success"
+                        title="Start pickup and get navigation"
+                      >
+                        {startPickupMutation.isLoading ? (
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                        )}
+                        {startPickupMutation.isLoading ? 'Starting...' : 'Start Pickup'}
+                      </button>
+                      <button
+                        onClick={() => openInMaps(selectedReport.location?.coordinates?.[1] || 0, selectedReport.location?.coordinates?.[0] || 0)}
+                        className="btn btn-outline"
+                        title="Navigate to pickup location"
+                      >
+                        <Navigation className="w-4 h-4 mr-2" />
+                        Navigate Now
+                      </button>
+                    </>
                   )}
 
                   {selectedReport.status === 'in_progress' && selectedReport.assignedTo === user?._id && (
@@ -655,7 +722,7 @@ const CollectorReports = () => {
                   )}
 
                   <button
-                    onClick={() => openInMaps(selectedReport.location.lat, selectedReport.location.lng)}
+                    onClick={() => openInMaps(selectedReport.location?.coordinates?.[1] || 0, selectedReport.location?.coordinates?.[0] || 0)}
                     className="btn btn-outline"
                   >
                     <Navigation className="w-4 h-4 mr-2" />

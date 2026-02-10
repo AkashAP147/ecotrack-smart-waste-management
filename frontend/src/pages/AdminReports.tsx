@@ -74,10 +74,19 @@ const AdminReports = () => {
     ({ reportId, collectorId }: { reportId: string; collectorId: string }) =>
       apiService.assignCollectorToReport(reportId, collectorId),
     {
-      onSuccess: () => {
+      onSuccess: (data) => {
         queryClient.invalidateQueries(['admin-all-reports']);
         setShowAssignModal(false);
         setSelectedReports([]);
+        // Show success toast
+        const reportWord = selectedReports.length === 1 ? 'report' : 'reports';
+        const collectorName = collectors.find((c: any) => c._id === data.data?.report?.assignedTo)?.name || 'collector';
+        alert(`Successfully assigned ${selectedReports.length} ${reportWord} to ${collectorName}!`);
+      },
+      onError: (error: any) => {
+        console.error('Assignment error:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Failed to assign collector';
+        alert(`Assignment failed: ${errorMessage}`);
       },
     }
   );
@@ -137,20 +146,25 @@ const AdminReports = () => {
     }
   };
 
-  const handleAssignCollector = (collectorId: string) => {
-    if (selectedReports.length === 1) {
-      assignCollectorMutation.mutate({
-        reportId: selectedReports[0],
-        collectorId,
-      });
-    } else {
-      // Handle bulk assignment
-      selectedReports.forEach(reportId => {
-        assignCollectorMutation.mutate({
-          reportId,
+  const handleAssignCollector = async (collectorId: string) => {
+    try {
+      if (selectedReports.length === 1) {
+        await assignCollectorMutation.mutateAsync({
+          reportId: selectedReports[0],
           collectorId,
         });
-      });
+      } else {
+        // Handle bulk assignment sequentially to avoid race conditions
+        for (const reportId of selectedReports) {
+          await assignCollectorMutation.mutateAsync({
+            reportId,
+            collectorId,
+          });
+        }
+      }
+    } catch (error) {
+      // Error is already handled in the mutation's onError
+      console.error('Assignment operation failed:', error);
     }
   };
 
@@ -351,7 +365,7 @@ const AdminReports = () => {
                     <div className="flex items-start space-x-3">
                       {report.photoUrl && (
                         <img
-                          src={report.photoUrl}
+                          src={`http://localhost:5000${report.photoUrl}`}
                           alt="Report"
                           className="w-12 h-12 rounded-lg object-cover"
                         />
@@ -608,7 +622,7 @@ const AdminReports = () => {
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
                       <img
-                        src={selectedReport.photoUrl}
+                        src={`http://localhost:5000${selectedReport.photoUrl}`}
                         alt="Report"
                         className="w-full h-48 object-cover rounded-lg"
                       />
