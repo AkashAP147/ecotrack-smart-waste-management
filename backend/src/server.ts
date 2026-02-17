@@ -254,7 +254,9 @@ const gracefulShutdown = () => {
       
       mongoose.connection.close().then(() => {
         console.log('✅ MongoDB connection closed');
-        process.exit(0);
+        if (process.env.NODE_ENV !== 'test') {
+          process.exit(0);
+        }
       });
     });
   } else {
@@ -267,7 +269,9 @@ const gracefulShutdown = () => {
   // Force close after 10 seconds
   setTimeout(() => {
     console.error('❌ Could not close connections in time, forcefully shutting down');
-    process.exit(1);
+    if (process.env.NODE_ENV !== 'test') {
+      process.exit(1);
+    }
   }, 10000);
 };
 
@@ -278,14 +282,14 @@ process.on('SIGINT', gracefulShutdown);
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   console.error('❌ Uncaught Exception:', error);
-  if (!isServerless) {
+  if (!isServerless && process.env.NODE_ENV !== 'test') {
     process.exit(1);
   }
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
-  if (!isServerless) {
+  if (!isServerless && process.env.NODE_ENV !== 'test') {
     process.exit(1);
   }
 });
@@ -338,7 +342,9 @@ if (process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME) {
     server = s;
   }).catch((error) => {
     console.error('❌ Failed to start server:', error);
-    process.exit(1);
+    if (process.env.NODE_ENV !== 'test') {
+      process.exit(1);
+    }
   });
 }
 

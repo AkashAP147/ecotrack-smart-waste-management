@@ -1,3 +1,21 @@
+/**
+ * @route   GET /api/report/image/:id
+ * @desc    Get report image by report ID
+ * @access  Private (must be authenticated)
+ */
+import Report from '../models/Report';
+router.get('/image/:id', authenticate, async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report || !report.photoData || !report.photoContentType) {
+      return res.status(404).send('Image not found');
+    }
+    res.set('Content-Type', report.photoContentType);
+    res.send(report.photoData);
+  } catch (err) {
+    res.status(500).send('Error retrieving image');
+  }
+});
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';

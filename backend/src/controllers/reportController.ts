@@ -33,7 +33,7 @@ export const createReport = async (req: Request, res: Response) => {
     }
 
     // Generate filename for memory storage
-    const filename = photo.filename || `report-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(photo.originalname)}`;
+    const filename = photo.originalname || `report-${Date.now()}-${Math.round(Math.random() * 1E9)}${path.extname(photo.originalname)}`;
 
     // Predict waste type using ML stub
     let predictedType = wasteType || 'other';
@@ -49,30 +49,12 @@ export const createReport = async (req: Request, res: Response) => {
       console.warn('ML prediction failed:', mlError);
     }
 
-    // Upload to S3 if configured, or use base64 for serverless
-    let photoUrl;
-    const isServerless = process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME;
-    
-    if (isServerless) {
-      // For serverless, convert to base64 data URL
-      const base64 = photo.buffer.toString('base64');
-      photoUrl = `data:${photo.mimetype};base64,${base64}`;
-    } else {
-      try {
-        const uploadResult = await uploadToS3(photo.path, filename, 'reports');
-        if (uploadResult.success) {
-          photoUrl = uploadResult.url;
-        }
-      } catch (s3Error) {
-        console.warn('S3 upload failed, using local storage:', s3Error);
-      }
-    }
-
-    // Create report
+    // Store image as Buffer in MongoDB
     const report = new Report({
       user: user._id,
       photo: filename,
-      photoUrl,
+      photoData: photo.buffer,
+      photoContentType: photo.mimetype,
       location: {
         type: 'Point',
         coordinates: [parseFloat(lng), parseFloat(lat)], // [longitude, latitude]

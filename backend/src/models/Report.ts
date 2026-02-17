@@ -3,6 +3,8 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IReport extends Document {
   user: mongoose.Types.ObjectId;
   photo: string;
+  photoData?: Buffer | null;
+  photoContentType?: string | null;
   photoUrl?: string; // S3 URL for production
   location: {
     type: 'Point';
@@ -37,6 +39,16 @@ const reportSchema = new Schema<IReport>(
     photo: {
       type: String,
       required: [true, 'Photo is required'],
+    },
+    photoData: {
+      type: Buffer,
+      required: false,
+      default: null,
+    },
+    photoContentType: {
+      type: String,
+      required: false,
+      default: null,
     },
     photoUrl: {
       type: String,
