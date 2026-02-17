@@ -229,14 +229,14 @@ const CollectorDashboard = () => {
     <ErrorBoundary>
     <div className="space-y-6">
       {/* Enhanced Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Collector Dashboard</h1>
-          <p className="text-gray-600 mt-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex-1">
+          <h1 className="text-3xl md:text-4xl font-bold text-gray-900">Collector Dashboard</h1>
+          <p className="text-gray-600 mt-2">
             Welcome back, {user?.name}! • {currentTime.toLocaleDateString()} {currentTime.toLocaleTimeString()}
           </p>
         </div>
-        <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
           {/* Notifications */}
           <div className="relative">
             <button
@@ -305,7 +305,7 @@ const CollectorDashboard = () => {
 
       {/* Statistics Cards */}
       {dashboardLoading ? (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {[...Array(4)].map((_, i) => (
             <div key={i} className="card">
               <div className="card-body flex justify-center">
@@ -315,7 +315,7 @@ const CollectorDashboard = () => {
           ))}
         </div>
       ) : stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="card">
             <div className="card-body">
               <div className="flex items-center justify-between">
@@ -386,8 +386,9 @@ const CollectorDashboard = () => {
         </div>
       )}
 
-      {/* Today's Route */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Today's Route and Recent Activity */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
         <div className="card">
           <div className="card-header">
             <div className="flex items-center justify-between">
@@ -444,7 +445,7 @@ const CollectorDashboard = () => {
                 </p>
               </div>
             ) : (
-              <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-h-96 overflow-y-auto">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -623,8 +624,7 @@ const CollectorDashboard = () => {
               </div>
             )}
           </div>
-        </div>
-
+        </div>        </div>
         {/* Recent Activity */}
         <div className="card">
           <div className="card-header">

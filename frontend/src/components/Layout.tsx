@@ -126,7 +126,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isActive = (href: string) => location.pathname === href;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col lg:flex-row">
       {/* Mobile sidebar backdrop */}
       {sidebarOpen && (
         <div 
@@ -137,7 +137,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0",
+        "fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 lg:relative lg:h-screen lg:w-64 xl:w-72",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
@@ -215,9 +215,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="flex-1 min-h-screen">
         {/* Top bar */}
-        <div className="sticky top-0 z-30 bg-white border-b border-gray-200 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="sticky top-0 z-30 bg-white border-b border-gray-200 px-2 py-2 sm:px-4 lg:px-6 xl:px-8 lg:rounded-tr-2xl xl:rounded-tr-3xl w-full">
           <div className="flex items-center justify-between">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -272,7 +272,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* Page content */}
         <main className="flex-1">
-          <div className="px-4 py-6 sm:px-6 lg:px-8">
+          <div className="px-2 py-4 sm:px-4 lg:px-6 xl:px-8 w-full">
             {children}
           </div>
         </main>

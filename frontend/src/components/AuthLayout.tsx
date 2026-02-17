@@ -26,7 +26,7 @@ const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
       <div className="mt-8 text-center">
         <p className="text-sm text-gray-600">
-          © 2024 EcoTrack. All rights reserved.
+          © 2025 EcoTrack. All rights reserved.
         </p>
       </div>
     </div>

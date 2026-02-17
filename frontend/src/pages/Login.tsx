@@ -155,15 +155,7 @@ const Login = () => {
         </p>
       </div>
 
-      {/* Demo accounts info */}
-      <div className="mt-8 p-4 bg-gray-50 rounded-lg">
-        <h3 className="text-sm font-medium text-gray-900 mb-2">Demo Accounts</h3>
-        <div className="text-xs text-gray-600 space-y-1">
-          <p><strong>Admin:</strong> admin@ecotrack.com / admin123</p>
-          <p><strong>Collector:</strong> collector@ecotrack.com / collector123</p>
-          <p><strong>User:</strong> user@ecotrack.com / user123</p>
-        </div>
-      </div>
+      
     </div>
   );
 };

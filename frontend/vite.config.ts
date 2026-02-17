@@ -21,7 +21,10 @@ export default defineConfig({
   server: {
     port: 3000,
     host: '0.0.0.0',
-    https: false,
+    // https: {
+    //   key: fs.readFileSync(path.resolve(__dirname, 'ssl/key.pem')),
+    //   cert: fs.readFileSync(path.resolve(__dirname, 'ssl/cert.pem')),
+    // },
     proxy: {
       '/api': {
         target: 'http://localhost:5000',

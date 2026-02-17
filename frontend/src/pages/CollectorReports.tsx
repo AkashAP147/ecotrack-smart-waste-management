@@ -194,8 +194,8 @@ const CollectorReports = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 sticky top-0 z-30">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -257,7 +257,7 @@ const CollectorReports = () => {
       </div>
 
       {/* Reports Grid */}
-      <div className="grid gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {filteredReports.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-lg shadow-sm border border-gray-200">
             <Truck className="mx-auto h-12 w-12 text-gray-400" />
@@ -272,9 +272,9 @@ const CollectorReports = () => {
           filteredReports.map((report: any) => (
             <div
               key={report._id}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 hover:shadow-md transition-shadow h-full flex flex-col"
             >
-              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between">
+              <div className="flex-1">
                 <div className="flex-1">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
