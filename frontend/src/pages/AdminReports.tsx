@@ -61,7 +61,8 @@ const AdminReports = () => {
       urgencyFilter !== 'all' ? urgencyFilter : undefined
     ),
     {
-      keepPreviousData: true,
+      cacheTime: 0,
+      staleTime: 0,
     }
   );
 
@@ -198,7 +199,7 @@ const AdminReports = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative h-[85vh] flex flex-col">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -232,7 +233,7 @@ const AdminReports = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 sticky top-0 z-30">
+      <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm border border-gray-200 sticky top-0 z-40">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -300,8 +301,8 @@ const AdminReports = () => {
       </div>
 
       {/* Reports Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-10">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden flex-1 flex flex-col min-h-0">
+        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 sticky top-0 z-30">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <input
@@ -323,9 +324,9 @@ const AdminReports = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto flex-1 min-h-0">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-12 z-20">
+            <thead className="bg-gray-50 sticky top-0 z-40">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Select
@@ -363,13 +364,13 @@ const AdminReports = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-start space-x-3">
-                      {report.photoUrl && (
+                      {report.photoUrl || report.photoContentType ? (
                         <img
-                          src={`http://localhost:5000${report.photoUrl}`}
+                          src={`http://localhost:5000/api/report/image/${report._id}`}
                           alt="Report"
                           className="w-12 h-12 rounded-lg object-cover"
                         />
-                      )}
+                      ) : null}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-gray-900 truncate">
                           {report.description}
@@ -562,7 +563,7 @@ const AdminReports = () => {
 
       {/* Report Details Modal */}
       {showReportModal && selectedReport && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[9999]">
           <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
             <div className="mt-3">
               <div className="flex items-center justify-between mb-4">
@@ -618,11 +619,11 @@ const AdminReports = () => {
                 </div>
                 
                 <div className="space-y-4">
-                  {selectedReport.photoUrl && (
+                  {selectedReport && (selectedReport.photoUrl || selectedReport.photoContentType) && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
                       <img
-                        src={`http://localhost:5000${selectedReport.photoUrl}`}
+                        src={`http://localhost:5000/api/report/image/${selectedReport._id}`}
                         alt="Report"
                         className="w-full h-48 object-cover rounded-lg"
                       />

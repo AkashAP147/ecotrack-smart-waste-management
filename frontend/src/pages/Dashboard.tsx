@@ -13,6 +13,7 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { apiService } from '@/services/api';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { useState } from 'react';
 
 const Dashboard = () => {
   const { user } = useAuthStore();
@@ -52,6 +53,18 @@ const Dashboard = () => {
       critical: 'urgency-critical',
     };
     return badges[urgency as keyof typeof badges] || 'badge-secondary';
+  };
+
+  const [selectedReport, setSelectedReport] = useState<any | null>(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleViewImage = (report: any) => {
+    setSelectedReport(report);
+    setShowModal(true);
+  };
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedReport(null);
   };
 
   const quickActions = [
@@ -242,6 +255,17 @@ const Dashboard = () => {
                           {report.address}
                         </div>
                       )}
+                      {/* Waste Image View Option */}
+                      {report.photoData || report.photoUrl ? (
+                        <div className="mt-2 flex justify-end">
+                          <button
+                            className="btn btn-sm bg-green-600 hover:bg-green-700 text-white font-semibold"
+                            onClick={() => handleViewImage(report)}
+                          >
+                            View Waste Image & Details
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                     <div className="text-right text-sm text-gray-500">
                       {new Date(report.createdAt).toLocaleDateString()}
@@ -249,6 +273,36 @@ const Dashboard = () => {
                   </div>
                 </div>
               ))}
+                  {/* Waste Image Modal */}
+                  {showModal && selectedReport && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+                      <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
+                        <button
+                          className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+                          onClick={closeModal}
+                        >
+                          &times;
+                        </button>
+                        <h3 className="text-lg font-semibold mb-4">Waste Image & Report Details</h3>
+                        <img
+                          src={`/api/report/image/${selectedReport._id}`}
+                          alt="Waste"
+                          className="w-full h-48 object-cover rounded mb-4 border"
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <div className="space-y-2">
+                          <div><strong>Description:</strong> {selectedReport.description}</div>
+                          <div><strong>Status:</strong> {selectedReport.status.replace('_', ' ')}</div>
+                          <div><strong>Urgency:</strong> {selectedReport.urgency}</div>
+                          <div><strong>Waste Type:</strong> {selectedReport.wasteType}</div>
+                          {selectedReport.address && (
+                            <div><strong>Address:</strong> {selectedReport.address}</div>
+                          )}
+                          <div><strong>Date:</strong> {new Date(selectedReport.createdAt).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
             </div>
           )}
         </div>

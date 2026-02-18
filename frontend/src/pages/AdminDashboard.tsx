@@ -27,6 +27,7 @@ const AdminDashboard = () => {
   const [selectedReport, setSelectedReport] = useState<any>(null);
   const [assignmentMode, setAssignmentMode] = useState<'manual' | 'auto' | 'scheduled'>('manual');
   const [showScheduledModal, setShowScheduledModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   const [scheduledSettings, setScheduledSettings] = useState({
     scheduledTime: '',
     scheduledDate: '',
@@ -144,6 +145,11 @@ const AdminDashboard = () => {
       hour: '2-digit',
       minute: '2-digit',
     });
+  };
+
+  const handleViewReport = (report: any) => {
+    setSelectedReport(report);
+    setShowReportModal(true);
   };
 
   return (
@@ -491,9 +497,100 @@ const AdminDashboard = () => {
                         {formatDate(report.createdAt)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button className="text-primary-600 hover:text-primary-900 mr-3">
+                        <button className="text-primary-600 hover:text-primary-900 mr-3" onClick={() => handleViewReport(report)}>
                           <Eye className="w-4 h-4" />
                         </button>
+                              {/* Report Details Modal */}
+                              {showReportModal && selectedReport && (
+                                <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-[9999]">
+                                  <div className="relative top-10 mx-auto p-5 border w-full max-w-2xl shadow-lg rounded-md bg-white">
+                                    <div className="mt-3">
+                                      <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-medium text-gray-900">Report Details</h3>
+                                        <button
+                                          onClick={() => setShowReportModal(false)}
+                                          className="text-gray-400 hover:text-gray-600"
+                                        >
+                                          ×
+                                        </button>
+                                      </div>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-4">
+                                          <div>
+                                            <label className="block text-sm font-medium text-gray-700">Description</label>
+                                            <p className="mt-1 text-sm text-gray-900">{selectedReport.description}</p>
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                              <label className="block text-sm font-medium text-gray-700">Waste Type</label>
+                                              <p className="mt-1 text-sm text-gray-900 capitalize">{selectedReport.wasteType}</p>
+                                            </div>
+                                            <div>
+                                              <label className="block text-sm font-medium text-gray-700">Urgency</label>
+                                              <p className={`mt-1 text-sm font-medium capitalize ${getUrgencyBadge(selectedReport.urgency)}`}>{selectedReport.urgency}</p>
+                                            </div>
+                                          </div>
+                                          <div>
+                                            <label className="block text-sm font-medium text-gray-700">Status</label>
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mt-1 ${getStatusBadge(selectedReport.status)}`}>
+                                              {selectedReport.status.replace('_', ' ')}
+                                            </span>
+                                          </div>
+                                          <div>
+                                            <label className="block text-sm font-medium text-gray-700">Location</label>
+                                            <p className="mt-1 text-sm text-gray-900">{selectedReport.address}</p>
+                                          </div>
+                                          <div>
+                                            <label className="block text-sm font-medium text-gray-700">Reported By</label>
+                                            <p className="mt-1 text-sm text-gray-900">{selectedReport.userName || 'N/A'}</p>
+                                            <p className="text-xs text-gray-500">{selectedReport.userEmail || ''}</p>
+                                          </div>
+                                        </div>
+                                        <div className="space-y-4">
+                                          {selectedReport.photoUrl && (
+                                            <div>
+                                              <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
+                                              <img
+                                                src={`http://localhost:5000${selectedReport.photoUrl}`}
+                                                alt="Report"
+                                                className="w-full h-48 object-cover rounded-lg"
+                                              />
+                                            </div>
+                                          )}
+                                          <div>
+                                            <label className="block text-sm font-medium text-gray-700">Estimated Quantity</label>
+                                            <p className="mt-1 text-sm text-gray-900 capitalize">{selectedReport.estimatedQuantity}</p>
+                                          </div>
+                                          <div>
+                                            <label className="block text-sm font-medium text-gray-700">Assigned Collector</label>
+                                            <p className="mt-1 text-sm text-gray-900">
+                                              {selectedReport.assignedToName || selectedReport.assignedTo?.name || 'Not assigned'}
+                                            </p>
+                                          </div>
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                              <label className="block text-sm font-medium text-gray-700">Created</label>
+                                              <p className="mt-1 text-sm text-gray-900">{formatDate(selectedReport.createdAt)}</p>
+                                            </div>
+                                            <div>
+                                              <label className="block text-sm font-medium text-gray-700">Updated</label>
+                                              <p className="mt-1 text-sm text-gray-900">{formatDate(selectedReport.updatedAt)}</p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="mt-6 flex justify-end space-x-3">
+                                        <button
+                                          onClick={() => setShowReportModal(false)}
+                                          className="btn btn-secondary"
+                                        >
+                                          Close
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                         {report.status === 'pending' && (
                           <button 
                             onClick={() => handleAssignCollector(report)}

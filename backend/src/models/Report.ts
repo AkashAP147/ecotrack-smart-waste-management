@@ -3,9 +3,9 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IReport extends Document {
   user: mongoose.Types.ObjectId;
   photo: string;
-  photoData?: Buffer | null;
+  imageId?: mongoose.Types.ObjectId;
   photoContentType?: string | null;
-  photoUrl?: string; // S3 URL for production
+  // photoUrl?: string; // Removed: Only buffer storage
   location: {
     type: 'Point';
     coordinates: [number, number]; // [longitude, latitude]
@@ -40,8 +40,9 @@ const reportSchema = new Schema<IReport>(
       type: String,
       required: [true, 'Photo is required'],
     },
-    photoData: {
-      type: Buffer,
+    imageId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Image',
       required: false,
       default: null,
     },
@@ -50,10 +51,7 @@ const reportSchema = new Schema<IReport>(
       required: false,
       default: null,
     },
-    photoUrl: {
-      type: String,
-      default: null,
-    },
+    // photoUrl: { type: String, default: null }, // Removed: Only buffer storage
     location: {
       type: {
         type: String,

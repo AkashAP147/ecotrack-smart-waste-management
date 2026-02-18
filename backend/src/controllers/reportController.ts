@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import mongoose from 'mongoose';
 import path from 'path';
 import Report, { IReport } from '../models/Report';
+import Image from '../models/Image';
 import User from '../models/User';
 import PickupLog from '../models/PickupLog';
 import { uploadToS3 } from '../services/s3';
@@ -23,6 +24,27 @@ export const createReport = async (req: Request, res: Response) => {
     }
 
     const { lat, lng, description, wasteType, urgency, address, estimatedQuantity } = req.body;
+
+    // Reverse geocode if address is missing or empty
+    let resolvedAddress = address;
+    if ((!address || address.trim() === '') && lat && lng) {
+      try {
+        const fetch = (await import('node-fetch')).default;
+        const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
+        const geoData = await geoRes.json();
+        if (geoData && geoData.display_name) {
+          resolvedAddress = geoData.display_name;
+        } else if (geoData && (geoData.locality || geoData.city)) {
+          resolvedAddress = [
+            geoData.locality || geoData.city,
+            geoData.principalSubdivision,
+            geoData.countryName
+          ].filter(Boolean).join(', ');
+        }
+      } catch (geoError) {
+        console.warn('Reverse geocoding failed:', geoError);
+      }
+    }
     const photo = req.file;
 
     if (!photo) {
@@ -49,23 +71,39 @@ export const createReport = async (req: Request, res: Response) => {
       console.warn('ML prediction failed:', mlError);
     }
 
-    // Store image as Buffer in MongoDB
+    // Store image as Buffer in MongoDB and also save to local disk
+    const fs = require('fs');
+    const uploadsDir = path.join(__dirname, '../../uploads');
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir);
+    }
+    const localPath = path.join(uploadsDir, filename);
+    fs.writeFileSync(localPath, photo.buffer);
+
+    // Save image buffer in Image collection
+    // Save image buffer in manually created 'image' collection
+    const imageDoc = await Image.create({
+      buffer: photo.buffer,
+      contentType: photo.mimetype,
+    });
+
     const report = new Report({
       user: user._id,
       photo: filename,
-      photoData: photo.buffer,
+      imageId: imageDoc._id,
       photoContentType: photo.mimetype,
       location: {
         type: 'Point',
-        coordinates: [parseFloat(lng), parseFloat(lat)], // [longitude, latitude]
+        coordinates: [parseFloat(lng), parseFloat(lat)],
       },
-      address,
+      address: resolvedAddress,
       wasteType: predictedType,
       predictedType,
       confidence,
       description,
       urgency: urgency || 'medium',
       estimatedQuantity,
+      photoUrl: `/uploads/${filename}`,
     });
 
     await report.save();

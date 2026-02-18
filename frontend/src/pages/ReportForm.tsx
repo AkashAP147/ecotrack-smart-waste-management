@@ -131,7 +131,7 @@ const ReportForm = () => {
 
     // Enhanced options for mobile devices
     const options = {
-      enableHighAccuracy: !isMobile, // Disable high accuracy on mobile for faster response
+      enableHighAccuracy: true, // Always request high accuracy for best GPS precision
       timeout: isMobile ? 45000 : 15000, // Longer timeout for mobile
       maximumAge: isMobile ? 600000 : 300000 // Accept older cached position on mobile
     };

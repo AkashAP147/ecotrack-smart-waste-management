@@ -46,29 +46,8 @@ const router = Router();
 // Use memory storage for serverless environments
 const isServerless = process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-let storage: multer.StorageEngine;
-
-if (isServerless) {
-  // Use memory storage for serverless
-  storage = multer.memoryStorage();
-} else {
-  // Use disk storage for local development
-  const uploadDir = path.join(process.cwd(), config.upload.uploadPath);
-  if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-  }
-  
-  storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, uploadDir);
-    },
-    filename: (req, file, cb) => {
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-      const extension = path.extname(file.originalname);
-      cb(null, `report-${uniqueSuffix}${extension}`);
-    },
-  });
-}
+// Always use memory storage for uploads so images are available as buffers for DB storage
+const storage: multer.StorageEngine = multer.memoryStorage();
 
 const fileFilter = (req: any, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   // Check file type

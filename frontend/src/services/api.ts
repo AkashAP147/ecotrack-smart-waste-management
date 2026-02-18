@@ -194,10 +194,6 @@ class ApiService {
     return response.data;
   }
 
-  async assignSelfToReport(reportId: string): Promise<ApiResponse<{ report: Report }>> {
-    const response = await this.api.post(`/api/collector/assign-self/${reportId}`);
-    return response.data;
-  }
 
   async updateReportStatus(reportId: string, data: UpdateReportStatusData): Promise<ApiResponse<{ report: Report }>> {
     const response = await this.api.put(`/api/report/${reportId}/status`, data);
