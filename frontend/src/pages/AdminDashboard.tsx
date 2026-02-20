@@ -551,7 +551,7 @@ const AdminDashboard = () => {
                                             <div>
                                               <label className="block text-sm font-medium text-gray-700 mb-2">Photo</label>
                                               <img
-                                                src={`http://localhost:5000${selectedReport.photoUrl}`}
+                                                src={`${import.meta.env.VITE_API_URL || ''}${selectedReport.photoUrl}`}
                                                 alt="Report"
                                                 className="w-full h-48 object-cover rounded-lg"
                                               />
